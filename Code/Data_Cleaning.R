@@ -1,6 +1,6 @@
 #set working directory
 
-path.wd <- "~/Desktop/Greenhouse2022"
+path.wd <- "/Users/elanafeldman/Documents/USUClasses/Thesis_Code/Greenhouse2022/Cleaned_Data/"
 setwd(path.wd)
 
 greenhouse <- read.csv("Greenhouse2022_clean.csv")
@@ -97,6 +97,9 @@ biomass$Block <- as.factor(biomass$Block)
 #max(biomass$Phrag.Biomass, na.rm = TRUE)
 #min(biomass$Phrag.Biomass, na.rm = TRUE)
 
+#now the grouping sheet
+func_grp <- read.csv("Groups_Final.csv")
+
 #Save the objects
 
-save(biomass, greenhouse, file = "main_dfs.RData")
+save(biomass, greenhouse, func_grp, file = "main_dfs.RData")

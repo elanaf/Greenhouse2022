@@ -2,6 +2,7 @@
 load("main_dfs.RData")
 library(magrittr)
 library(tidyr)
+library(dplyr)
 library(ggplot2)
 library(glmmTMB) #allows us to use a beta distribution
 library(DHARMa)
@@ -25,9 +26,10 @@ options(contrasts = c("contr.sum", "contr.poly"))
 
 #Native cover
 mdf <- greenhouse %>%
-  filter(!is.na(Density),
+  dplyr::filter(!is.na(Density),
          Date_Cleaned == "2022-05-16",
          Species != "JUTO" & Species != "JUGE"  & Species != "SCAM" & Species != "BOMA")
+
 
 mdf$Cover.Native[mdf$Cover.Native == 0] <- 0.005 #make 0s a trace amount - could be half the smallest amount
 
@@ -44,16 +46,16 @@ summary(mdf.m1)
 #Native biomass
 table(biomass$Species)
 mdf <- biomass %>%
-  filter(!is.na(Density),
+  dplyr::filter(!is.na(Density),
          Species != "JUTO" & Species != "JUGE"  & Species != "SCAM" & Species != "BOMA") %>%
-  mutate(Species = factor(Species)) #need to remove the factor levels (species) that were removed
+  dplyr::mutate(Species = factor(Species)) #need to remove the factor levels (species) that were removed
 table(mdf$Species)
 with(mdf, table(Species, Density, Phrag_Presence, useNA = "ifany"))
 mdf_avg <- mdf %>% 
-  group_by(Block, Phrag_Presence, Density, Species) %>%
-  summarize(Native.Biomass = mean(Native.Biomass), 
-            nobs = n()) %>%#to average the BICE where there is an extra observation
-  ungroup() 
+  dplyr::group_by(Block, Phrag_Presence, Density, Species) %>%
+  dplyr::summarize(Native.Biomass = mean(Native.Biomass), 
+            nobs = dplyr::n()) %>%#to average the BICE where there is an extra observation
+  dplyr::ungroup() 
 table(mdf_avg$nobs) #double check to make sure BICE is the only one with 2 observations
 summary(mdf_avg$Native.Biomass) #no 0s so log shouldnt be a problem
 

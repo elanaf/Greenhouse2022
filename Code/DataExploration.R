@@ -1,10 +1,13 @@
 #Call objects
 load("main_dfs.RData")
+func_group <- read.csv("/Users/elanafeldman/Documents/USUClasses/Thesis_Code/Greenhouse2022/Cleaned_Data/Groups_Final.csv")
 
 ##Graphing
 library(ggplot2)
 library(magrittr)
 library(dplyr)
+library(gridExtra)
+library(ggtext)
 
 ####Graphs for native species model####
 
@@ -416,14 +419,14 @@ final.biomass.red <- bind_rows(combine1, biomass.b3)
 #                fun.data = mean_se, geom = "errorbar",
 #                position = position_dodge(0.95)) 
 
-final.data.red %>%
-  ggplot(aes(x = Species, y = P.Height.Red, color = Density)) +
-  stat_summary(aes(group = Density),
-               fun = mean, geom = "point", 
-               position = position_dodge(0.95)) +
-  stat_summary(aes(group = Density, width = .5),
-               fun.data = mean_se, geom = "errorbar",
-               position = position_dodge(0.95)) 
+# final.data.red %>%
+#   ggplot(aes(x = Species, y = P.Height.Red, color = Density)) +
+#   stat_summary(aes(group = Density),
+#                fun = mean, geom = "point", 
+#                position = position_dodge(0.95)) +
+#   stat_summary(aes(group = Density, width = .5),
+#                fun.data = mean_se, geom = "errorbar",
+#                position = position_dodge(0.95)) 
 
 #Phrag Cover
 # final.data.red %>%
@@ -437,15 +440,16 @@ final.data.red %>%
 
 cover.red <- final.data.red %>%
   filter(Species != "PHAU") %>%
-  ggplot(aes(x = Species, y = P.Cover.Red, color = Density)) +
+  ggplot(aes(x = reorder(Species, P.Cover.Red), y = P.Cover.Red, color = Density)) +
   stat_summary(aes(group = Density),
                fun = mean, geom = "point", 
                position = position_dodge(0.95)) +
   stat_summary(aes(group = Density, width = .5),
                fun.data = mean_se, geom = "errorbar",
                position = position_dodge(0.95)) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 0.9))+
-  labs(y = "Percent Change in Phrag Cover")
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
+        axis.title.y = ggtext::element_markdown()) +
+  labs(y = "Percent Change in *Phragmites* Cover", x = "Species")
 
 cover.red
 
@@ -464,15 +468,16 @@ ggsave(filename = "cover_reduction.jpeg",
 
 biomass.red <- final.biomass.red %>%
   filter(Species != "PHAU") %>%
-  ggplot(aes(x = Species, y = P.Biomass.Red, color = Density)) +
+  ggplot(aes(x = reorder(Species, P.Biomass.Red), y = P.Biomass.Red, color = Density)) +
   stat_summary(aes(group = Density),
                fun = mean, geom = "point", 
                position = position_dodge(0.95)) +
   stat_summary(aes(group = Density, width = .5),
                fun.data = mean_se, geom = "errorbar",
                position = position_dodge(0.95)) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 0.9)) +
-  labs(y = "Percent Change in Phrag Biomass")
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
+        axis.title.y = ggtext::element_markdown()) +
+  labs(y = "Change in *Phragmites* Biomass", x = "Species")
 
 biomass.red
 
@@ -490,3 +495,88 @@ final_means_biomass <- final.biomass.red %>%
   group_by(Species, Density) %>%
   summarise(trt_mean = mean(P.Biomass.Red, na.rm = TRUE))
 
+####Relationships between traits and phrag cover ####
+
+#using the full dataset
+final.traits <- greenhouse %>%
+  filter(Date_Cleaned == "2022-05-16" & Phrag_Presence == "W") %>%
+  select(Species, Block, Density, Cover.Native, Height.Native, Cover.Phrag)
+
+final.biomass <- biomass %>%
+  filter(Phrag_Presence == "W") %>%
+  select(Species, Block, Density, Native.Biomass, Phrag.Biomass)
+
+final <- left_join(final.traits, final.biomass, by = c("Species", "Density", "Block"))
+final.all <- left_join(final, func_group, by = c("Species"))
+
+#Regressions
+# lm_cover_height <- lm(Cover.Phrag ~ Height.Native + Density, data = final.all)
+# summary(lm_cover_height)
+
+lm_cover_biomass <- lm(Cover.Phrag ~ Native.Biomass + Density + Group, data = final.all)
+summary(lm_cover_biomass)
+
+lm_cover_cover <- lm(Cover.Phrag ~ Cover.Native + Density + Group, data = final.all)
+summary(lm_cover_cover)
+
+# lm_biomass_height <- lm(Phrag.Biomass ~ Height.Native + Density, data = final.all)
+# summary(lm_biomass_height)
+
+lm_biomass_biomass <- lm(Phrag.Biomass ~ Native.Biomass + Density + Group, data = final.all)
+summary(lm_biomass_biomass)
+#group seems to be significant for this one but only this one - bulrush, rush (make sense because they are 0), and grass (idk...)
+
+lm_biomass_cover <- lm(Phrag.Biomass ~ Cover.Native + Density + Group, data = final.all)
+summary(lm_biomass_cover)
+
+#Graphs
+b_b <- ggplot(final.all, aes(x = Native.Biomass, y = Phrag.Biomass)) +
+  geom_point(aes(color = Group)) +
+  theme(axis.title.y = ggtext::element_markdown())+
+  labs(x = "Native Biomass", y = "*Phragmites* Biomass", color = "Functional Group") +
+  geom_smooth(method="lm", se=FALSE, fullrange = TRUE) +
+  ylim(0, 50)
+b_b
+
+ggsave(filename = "lm_native-biomass_phrag-biomass.jpeg", 
+       device = "jpeg")
+
+b_c <- ggplot(final.all, aes(x = Cover.Native, y = Phrag.Biomass)) +
+  geom_point(aes(color = Group)) +
+  theme(axis.title.y = ggtext::element_markdown())+
+  labs(x = "Native Cover", y = "*Phragmites* Biomass", color = "Functional Group") +
+  geom_smooth(method="lm", se=FALSE, fullrange = TRUE) +
+  ylim(0, 50)
+b_c
+
+ggsave(filename = "lm_native-cover_phrag-biomass.jpeg", 
+       device = "jpeg")
+
+
+# b_h <- ggplot(traits, aes(x = final.height, y = phrag.biomass)) +
+#   geom_point() +
+#   labs(x = "Native Height", y = "P. australis Biomass")
+
+c_b <- ggplot(final.all, aes(x = Native.Biomass, y = Cover.Phrag)) +
+  geom_point(aes(color = Group)) +
+  theme(axis.title.y = ggtext::element_markdown())+
+  labs(x = "Native Biomass", y = "*Phragmites* Cover",color = "Functional Group")+
+  geom_smooth(method="lm", se=FALSE, fullrange = TRUE)
+c_b
+
+ggsave(filename = "lm_native-biomass_phrag-cover.jpeg", 
+       device = "jpeg")
+
+
+c_c <- ggplot(final.all, aes(x = Cover.Native, y = Cover.Phrag)) +
+  geom_point(aes(color = Group)) +
+  theme(axis.title.y = ggtext::element_markdown())+
+  labs(x = "Native Cover", y = "*Phragmites* Cover", color = "Functional Group")+
+  geom_smooth(method="lm", se=FALSE, fullrange = TRUE)
+c_c
+
+ggsave(filename = "lm_native-cover_phrag-cover.jpeg", 
+       device = "jpeg")
+
+
+grid.arrange(b_b, b_c, c_b, c_c, ncol = 2, nrow = 2)
