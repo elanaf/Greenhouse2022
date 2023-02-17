@@ -43,6 +43,13 @@ summary(mdf.m1)
 #intercept now represents the mean across all the species - re-read email about the contrasts
 #the standard errors should be the same if everything is balanced
 
+mdf.m1_res <- simulateResiduals(mdf.m1, plot = T)
+#sqrt did not seem to help, residuals very bad 
+
+Anova(mdf.m1, type = 3) 
+emmip(mdf.m1, Species~Density|Phrag_Presence, CIs = T)
+emmip(mdf.m1, Phrag_Presence~Density|Species, CIs = T)
+
 #Native biomass
 table(biomass$Species)
 mdf <- biomass %>%
@@ -83,8 +90,8 @@ Anova(mdf.m1, type = 3)
 #there is evidence of a significant 3-way interaction - other interactions not interpretable because of 3 way
 emmip(mdf.m1, Species~Density|Phrag_Presence, CIs = T)
 emmip(mdf.m1, Phrag_Presence~Density|Species, CIs = T)
-#a lot of species that phrag presence doesn't matter for, for some a pattern fo WO being on top
-#probably no itneraction between density and phrag if the lines are parallel
+#a lot of species that phrag presence doesn't matter for, for some a pattern of WO being on top
+#probably no interaction between density and phrag if the lines are parallel
 #there is an interaction between density and phrag if the lines are not parallel
 #three way interaction because only some species have the density x phrag_presence interaction
 
