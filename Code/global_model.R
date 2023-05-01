@@ -1,9 +1,6 @@
 #Load objects
 load("main_dfs.RData")
-library(magrittr)
-library(tidyr)
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
 library(glmmTMB) #allows us to use a beta distribution
 library(DHARMa)
 library(emmeans)
@@ -28,7 +25,7 @@ options(contrasts = c("contr.sum", "contr.poly"))
 mdf <- greenhouse %>%
   dplyr::filter(!is.na(Density),
          Date_Cleaned == "2022-05-16",
-         Species != "JUTO" & Species != "JUGE"  & Species != "SCAM" & Species != "BOMA")
+         Species != "JUTO" & Species != "JUGE"  & Species != "SCAM" & Species != "BOMA"& Species != "SYCI")
 
 
 mdf$Cover.Native[mdf$Cover.Native == 0] <- 0.005 #make 0s a trace amount - could be half the smallest amount
@@ -54,7 +51,7 @@ emmip(mdf.m1, Phrag_Presence~Density|Species, CIs = T)
 table(biomass$Species)
 mdf <- biomass %>%
   dplyr::filter(!is.na(Density),
-         Species != "JUTO" & Species != "JUGE"  & Species != "SCAM" & Species != "BOMA") %>%
+         Species != "JUTO" & Species != "JUGE"  & Species != "SCAM" & Species != "BOMA" & Species != "SYCI") %>%
   dplyr::mutate(Species = factor(Species)) #need to remove the factor levels (species) that were removed
 table(mdf$Species)
 with(mdf, table(Species, Density, Phrag_Presence, useNA = "ifany"))

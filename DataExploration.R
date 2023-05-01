@@ -578,5 +578,5 @@ c_c
 ggsave(filename = "lm_native-cover_phrag-cover.jpeg", 
        device = "jpeg")
 
-
-grid.arrange(b_b, b_c, c_b, c_c, ncol = 2, nrow = 2)
+library(patchwork)
+(c_c + c_b) / (b_c + b_b) #something like this, I forgot to save
