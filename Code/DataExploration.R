@@ -1,4 +1,4 @@
-
+library(tidyverse)
 
 ####Graphs for native species model####
 
@@ -353,6 +353,8 @@ final.data.b3 <- final.data.b3 %>%
 #combine back into 1 dataset to graph
 combine1 <- bind_rows(final.data.b1, final.data.b2)
 final.data.red <- bind_rows(combine1, final.data.b3)
+final.data.red <- final.data.red %>% 
+  mutate(Pos.Red = P.Cover.Red * -1) #to get a positive value
 
 #and now for biomass
 #make different datasets based on block to make calculations easier
@@ -398,6 +400,8 @@ biomass.b3 <- biomass.b3 %>%
 #combine back into 1 dataset to graph
 combine1 <- bind_rows(biomass.b1, biomass.b2)
 final.biomass.red <- bind_rows(combine1, biomass.b3)
+final.biomass.red <- final.biomass.red %>% 
+  mutate(Pos.Red = P.Biomass.Red*-1) #to make positive
 
 #and graph to see if there are any major differences
 #Phrag Height
@@ -429,9 +433,22 @@ final.biomass.red <- bind_rows(combine1, biomass.b3)
 #                fun.data = mean_se, geom = "errorbar",
 #                position = position_dodge(0.95)) 
 
-cover.red <- final.data.red %>%
+#I need to calculate and manually reorder because NAs throwing off my graph
+#final.data.red %>% 
+  group_by(Species, Density) %>% 
+  mutate(mean = mean(Pos.Red, na.rm = TRUE)) %>% 
+  arrange(mean) %>% 
+  View()
+
+cover.red <- final.data.red %>% 
   filter(Species != "PHAU") %>%
-  ggplot(aes(x = reorder(Species, P.Cover.Red), y = P.Cover.Red, color = Density)) +
+  mutate(Species = factor(Species,
+                          levels = c("SCAM", "JUAR", "SCAC",
+                                     "JUGE", "SYCI", "MUAS", "PUNU",
+                                     "BOMA", "SOCA", "SCPU", "EUOC", "JUTO",
+                                     "DISP", "EUMA", "BICE", "EPCI",
+                                     "RUMA", "HENU"))) %>% 
+  ggplot(aes(x = Species, y = Pos.Red, color = Density)) +
   stat_summary(aes(group = Density),
                fun = mean, geom = "point", 
                position = position_dodge(0.95)) +
@@ -440,7 +457,7 @@ cover.red <- final.data.red %>%
                position = position_dodge(0.95)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown()) +
-  labs(y = "Percent Change in *Phragmites* Cover", x = "Species")
+  labs(y = "Proportion Reduction in *Phragmites* Cover", x = "Species")
 
 cover.red
 
@@ -459,7 +476,7 @@ ggsave(filename = "cover_reduction.jpeg",
 
 biomass.red <- final.biomass.red %>%
   filter(Species != "PHAU") %>%
-  ggplot(aes(x = reorder(Species, P.Biomass.Red), y = P.Biomass.Red, color = Density)) +
+  ggplot(aes(x = reorder(Species, Pos.Red), y = Pos.Red, color = Density)) +
   stat_summary(aes(group = Density),
                fun = mean, geom = "point", 
                position = position_dodge(0.95)) +
@@ -468,7 +485,7 @@ biomass.red <- final.biomass.red %>%
                position = position_dodge(0.95)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown()) +
-  labs(y = "Change in *Phragmites* Biomass", x = "Species")
+  labs(y = "Proportion Reduction of *Phragmites* Biomass", x = "Species")
 
 biomass.red
 

@@ -7,6 +7,7 @@ library(ggplot2)
 library(magrittr)
 library(dplyr)
 library(patchwork)
+library(emmeans)
 
 ####Relationships between traits and phrag cover ####
 
@@ -69,6 +70,19 @@ cor.test(final.all$Phrag.Biomass, final.all$Native.Biomass,
          method = "pearson", use = "complete.obs", exact = FALSE, conf.int = TRUE)
 #gives you the conifidence interval, only for the pearson
 #might be other functions that can give you for the spearman
+#r(100) = -0.56, p = 7.052e-10
+
+cor.test(final.all$Cover.Phrag, final.all$Native.Biomass, 
+         method = "pearson", use = "complete.obs", exact = FALSE, conf.int = TRUE)
+#r(100) = -0.61, p = 1.352e-11
+
+cor.test(final.all$Cover.Phrag, final.all$Cover.Native, 
+         method = "pearson", use = "complete.obs", exact = FALSE, conf.int = TRUE)
+#r(106) = -0.60, p = 9.93e-12
+
+cor.test(final.all$Phrag.Biomass, final.all$Cover.Native, 
+         method = "pearson", use = "complete.obs", exact = FALSE, conf.int = TRUE)
+#r(108) = -0.60, p = 5.097e-12
 
 lm_biomass_cover <- lm(Phrag.Biomass ~ Cover.Native + Density + Group, data = final.all)
 summary(lm_biomass_cover)
