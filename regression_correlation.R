@@ -8,17 +8,21 @@ library(magrittr)
 library(dplyr)
 library(patchwork)
 library(emmeans)
+library(glmmTMB)
+library(DHARMa)
+library(car)
+options(contrasts = c("contr.sum", "contr.poly"))
 
 ####Relationships between traits and phrag cover ####
 
 #using the full dataset
 final.traits <- greenhouse %>%
   filter(Date_Cleaned == "2022-05-16" & Phrag_Presence == "W") %>%
-  select(Species, Block, Density, Cover.Native, Height.Native, Cover.Phrag)
+  dplyr::select(Species, Block, Density, Cover.Native, Height.Native, Cover.Phrag)
 
 final.biomass <- biomass %>%
   filter(Phrag_Presence == "W") %>%
-  select(Species, Block, Density, Native.Biomass, Phrag.Biomass)
+  dplyr::select(Species, Block, Density, Native.Biomass, Phrag.Biomass)
 
 final <- left_join(final.traits, final.biomass, by = c("Species", "Density", "Block"))
 final.all <- left_join(final, func_group, by = c("Species"))
@@ -155,3 +159,63 @@ ggsave(filename = "lm_native-cover_phrag-cover.jpeg",
 (c_b + c_c) / (b_b + b_c)
 ggsave(filename = "phrag_native_biomass_cover_graphs_all.jpeg",
        device = "jpeg")
+
+
+# Redo as GLMM ####
+
+#need to remove the species with NAs as I did before
+final.all <- final.all %>% 
+  filter(Species != "JUTO" & Species != "JUGE"  & Species != "SCAM" & 
+           Species != "BOMA"& Species != "SYCI")
+
+final.all$Density <- as.factor(final.all$Density)
+final.all$Group <- as.factor(final.all$Group)
+                  
+mdf.m1 <- glmmTMB(sqrt(Phrag.Biomass) ~ Native.Biomass * Group * Density
+                  + (1|Block),
+                  data = final.all,
+                  family = gaussian
+)
+summary(mdf.m1)
+simulateResiduals(mdf.m1, plot = T) 
+plotResiduals(mdf.m1, form= final.all$Density) 
+
+Anova(mdf.m1) 
+#no three way interaction
+#interaction between biomass & group and group & density
+
+emmip(mdf.m1, Native.Biomass~Group, CIs = T, cov.reduce = range)
+emmeans(mdf.m1, pairwise~Native.Biomass|Group, type = "response", adjust = "tukey", cov.reduce = range)
+#significant difference between the max and min for bulrush and perennial forb
+#marginally significant for rush
+#phrag biomass higher when native biomass at the max level in Bulrush and Rush
+#phrag biomass lower when native biomass at the max level for Perennial Forb
+
+
+emmip(mdf.m1, Density~Group, CIs = T)
+emmeans(mdf.m1, pairwise~Density|Group, type = "response", adjust = "tukey")
+#Only an effect of density on Bulrush
+#Phrag biomass higher in the low density than the high density
+
+
+
+
+mdf.m2 <- glmmTMB(sqrt(Cover.Phrag) ~ Cover.Native * Group + Density
+                  + (1|Block),
+                  data = final.all,
+                  family = gaussian
+)
+summary(mdf.m2)
+simulateResiduals(mdf.m2, plot = T) #fit isn't great
+plotResiduals(mdf.m2, form= final.all$Density) 
+#looks like nothing is significant
+
+mdf.m3 <- glmmTMB(sqrt(Cover.Phrag) ~ Cover.Native * Density + Group
+                  + (1|Block),
+                  data = final.all,
+                  family = gaussian
+)
+summary(mdf.m3)
+simulateResiduals(mdf.m3, plot = T) 
+plotResiduals(mdf.m3, form= final.all$Density) 
+#looks like only cover is significant

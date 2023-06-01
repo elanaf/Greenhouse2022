@@ -1,5 +1,5 @@
 library(tidyverse)
-
+load("main_dfs.RData")
 ####Graphs for native species model####
 
 #how does native height change over time by density and presence of phrag
