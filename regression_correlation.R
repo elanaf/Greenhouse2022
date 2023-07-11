@@ -13,7 +13,7 @@ library(DHARMa)
 library(car)
 options(contrasts = c("contr.sum", "contr.poly"))
 
-####Relationships between traits and phrag cover ####
+#Relationships between traits and phrag cover ####
 
 #using the full dataset
 final.traits <- greenhouse %>%
@@ -170,7 +170,9 @@ final.all <- final.all %>%
 
 final.all$Density <- as.factor(final.all$Density)
 final.all$Group <- as.factor(final.all$Group)
+final.all$Species <- as.factor(final.all$Species)
                   
+##Invasive ~ Native biomass ####
 mdf.m1 <- glmmTMB(sqrt(Phrag.Biomass) ~ Native.Biomass * Group * Density
                   + (1|Block),
                   data = final.all,
@@ -179,17 +181,31 @@ mdf.m1 <- glmmTMB(sqrt(Phrag.Biomass) ~ Native.Biomass * Group * Density
 summary(mdf.m1)
 simulateResiduals(mdf.m1, plot = T) 
 plotResiduals(mdf.m1, form= final.all$Density) 
+#looks good
 
 Anova(mdf.m1) 
 #no three way interaction
 #interaction between biomass & group and group & density
 
 emmip(mdf.m1, Native.Biomass~Group, CIs = T, cov.reduce = range)
-emmeans(mdf.m1, pairwise~Native.Biomass|Group, type = "response", adjust = "tukey", cov.reduce = range)
+emmeans(mdf.m1, pairwise~Native.Biomass|Group, adjust = "tukey", cov.reduce = range)
 #significant difference between the max and min for bulrush and perennial forb
 #marginally significant for rush
 #phrag biomass higher when native biomass at the max level in Bulrush and Rush
 #phrag biomass lower when native biomass at the max level for Perennial Forb
+
+emm1 <- emmeans(mdf.m1, pairwise~Native.Biomass|Group, adjust = "tukey", cov.reduce = range)
+data1 <- multcomp::cld(emm1, alpha = 0.1, Letters = letters)
+
+ggplot(data = data1, aes(x = Group, y = emmean)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = (emmean - SE),
+                    ymax = (emmean+SE)),
+                width=0, size=0.5) +
+  labs(x="Seed Mix", y = "Model predicted mean (Phragmites biomass)") +
+  geom_text(aes(label = .group,  y = emmean),
+            nudge_x = 0.2) +
+  facet_grid(~Native.Biomass)
 
 
 emmip(mdf.m1, Density~Group, CIs = T)
@@ -197,25 +213,116 @@ emmeans(mdf.m1, pairwise~Density|Group, type = "response", adjust = "tukey")
 #Only an effect of density on Bulrush
 #Phrag biomass higher in the low density than the high density
 
+emm2 <- emmeans(mdf.m1, pairwise~Density|Group, type = "response", adjust = "tukey")
+data2 <- multcomp::cld(emm2, alpha = 0.1, Letters = letters)
 
+ggplot(data = data2, aes(x = Group, y = response * 100)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = 100*(response - SE),
+                    ymax = 100*(response+SE)),
+                width=0, size=0.5) +
+  labs(x="Seed Mix", y = "Model predicted Phragmites biomass") +
+  geom_text(aes(label = .group,  y = response * 100),
+            nudge_x = 0.2)
 
-
-mdf.m2 <- glmmTMB(sqrt(Cover.Phrag) ~ Cover.Native * Group + Density
+## Native ~ Invasive biomass ####
+mdf.m4 <- glmmTMB(sqrt(Native.Biomass) ~ Phrag.Biomass * Density * Group
                   + (1|Block),
                   data = final.all,
                   family = gaussian
 )
-summary(mdf.m2)
-simulateResiduals(mdf.m2, plot = T) #fit isn't great
-plotResiduals(mdf.m2, form= final.all$Density) 
-#looks like nothing is significant
+summary(mdf.m4)
+simulateResiduals(mdf.m4, plot = T) 
+plotResiduals(mdf.m4, form= final.all$Density) 
+#looks pretty good
 
-mdf.m3 <- glmmTMB(sqrt(Cover.Phrag) ~ Cover.Native * Density + Group
+Anova(mdf.m4)
+#looks like Density and group are significant with an interaction between Phrag.Biomass and Group
+
+emmip(mdf.m4, Density~Group, CIs = T)
+emmeans(mdf.m4, pairwise~Density, type = "response", adjust = "tukey")
+#Can I still interpret Density because not part of the two-way interaction?
+#If so, high density seems to have higher native biomass, but only marginally 
+
+emm3 <- emmeans(mdf.m4, pairwise~Density, type = "response", adjust = "tukey")
+data3 <- multcomp::cld(emm3, alpha = 0.1, Letters = letters)
+
+ggplot(data = data3, aes(x = Density, y = response * 100)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = 100*(response - SE),
+                    ymax = 100*(response+SE)),
+                width=0, size=0.5) +
+  labs(x="Seeding density", y = "Model predicted native cover") +
+  geom_text(aes(label = .group,  y = response * 100),
+            nudge_x = 0.2)
+
+emmip(mdf.m4, Phrag.Biomass~Group, CIs = T)
+emmeans(mdf.m4, pairwise~Phrag.Biomass|Group, type = "response", adjust = "tukey", cov.reduce = range)
+#Significant difference in native biomass between min and max phrag biomass for 
+#Annual forb (p = 0.0778) and Perennial forb (p = 0.0029)
+
+emm4 <- emmeans(mdf.m4, pairwise~Phrag.Biomass|Group, type = "response", adjust = "tukey", cov.reduce = range)
+data4 <- multcomp::cld(emm4, alpha = 0.1, Letters = letters)
+
+ggplot(data = data4, aes(x = Group, y = response * 100)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = 100*(response - SE),
+                    ymax = 100*(response+SE)),
+                width=0, size=0.5) +
+  labs(x="Seed Mix", y = "Model predicted native cover") +
+  geom_text(aes(label = .group,  y = response * 100),
+            nudge_x = 0.2) +
+  facet_grid(~Phrag.Biomass)
+
+##Invasive ~ Native cover ####
+mdf.m2 <- glmmTMB(Cover.Phrag ~ Cover.Native + Density + Group
                   + (1|Block),
                   data = final.all,
-                  family = gaussian
+                  family = beta_family(),
+                  control = glmmTMBControl(optimizer = optim, 
+                                           optArgs = list(method="BFGS"))
+)
+summary(mdf.m2)
+simulateResiduals(mdf.m2, plot = T) 
+plotResiduals(mdf.m2, form= final.all$Density) 
+#So this doesn't work with the interactions, however the interactions are not significant individually so maybe okay to just do +?
+#model fit actually pretty good 
+
+Anova(mdf.m2)
+#Only native cover is significant
+
+emmip(mdf.m2, Cover.Native ~ Group, CIs = T, cov.reduce= range)
+emmeans(mdf.m2, pairwise~Cover.Native, cov.reduce = range)
+#mean is lower at max native cover compared to min native cover
+#so the phrag cover seems to decrease as native cover increases? 
+
+##Native ~ Invasive Cover ####
+mdf.m3 <- glmmTMB(Cover.Native ~ Cover.Phrag * Group + Density
+                  + (1|Block),
+                  data = final.all,
+                  family = beta_family()
 )
 summary(mdf.m3)
 simulateResiduals(mdf.m3, plot = T) 
+#this fit is really bad but this is best out of all combinations of */+
 plotResiduals(mdf.m3, form= final.all$Density) 
-#looks like only cover is significant
+
+Anova(mdf.m3)
+#Cover, Group, and Density all significant, with an interaction between cover and group
+emmip(mdf.m3, Density~Group, CIs = T)
+#high density seems higher, although honestly not that much higher?
+emmip(mdf.m3, Cover.Phrag~Group, CIs = T, cov.reduce= range)
+#looks like native cover has a bigger difference between the max and min of the phrag cover for perennial forb but maybe not the others
+
+emmeans(mdf.m3, pairwise~Density, type = "response", adjust = "tukey")
+#High density has higher mean than low density
+#So native cover is higher in the high density
+
+emmeans(mdf.m3, pairwise~Group|Cover.Phrag, cov.reduce = range)
+#at the lowest phrag cover, annual forb is different from everything except perennial forb
+#also perennial forb is different from bulrush and grass
+#at the highest phrag cover, the only thing different is bulrush and perennial forb 
+#So I guess everything is pretty similar when there is high phrag cover 
+#(except rush is a little lower and perennial is a little higher)
+#but at the low phrag cover, annual forb and perennial forb do pretty well 
+#Annual forb does the best, perennial is the best except a little similar to rush 

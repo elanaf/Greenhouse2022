@@ -5,6 +5,8 @@ library(glmmTMB) #allows us to use a beta distribution
 library(DHARMa)
 library(emmeans)
 library(car)
+library(multcompView)
+library(gridExtra)
 
 greenhouse$Density <- as.factor(greenhouse$Density)
 greenhouse$Phrag_Presence <- as.factor(greenhouse$Phrag_Presence)
@@ -21,7 +23,7 @@ options(contrasts = c("contr.sum", "contr.poly"))
 #JUTO LW 2, SCAM LWO 2, SCAM LW 2, JUTO HW 2, JUGE LWO 2, JUTO HWO 3, BOMA LW 3, JUTO LW 3,
 #JUTO LWO 3, SCAM LWO 3, BOMA HW 3, BOMA LWO 3, BOMA HWO 2, JUGE LW 3
 
-#Native cover
+#Native cover ####
 mdf <- greenhouse %>%
   dplyr::filter(!is.na(Density),
          Date_Cleaned == "2022-05-16",
@@ -29,6 +31,16 @@ mdf <- greenhouse %>%
 
 
 mdf$Cover.Native[mdf$Cover.Native == 0] <- 0.005 #make 0s a trace amount - could be half the smallest amount
+mdf$Phrag_Presence <- as.character(mdf$Phrag_Presence)
+mdf$Phrag_Presence[mdf$Phrag_Presence == "W"] <- "Present"
+mdf$Phrag_Presence[mdf$Phrag_Presence == "WO"] <- "Absent"
+mdf$Phrag_Presence <- as.factor(mdf$Phrag_Presence)
+
+
+mdf$Density <- as.character(mdf$Density)
+mdf$Density[mdf$Density == "H"] <- "High"
+mdf$Density[mdf$Density == "L"] <- "Low"
+mdf$Density <- as.factor(mdf$Density)
 
 mdf.m1<- glmmTMB(Cover.Native ~ Phrag_Presence * Density * Species  #* for interaction
                  + (1|Block),
@@ -47,7 +59,50 @@ Anova(mdf.m1, type = 3)
 emmip(mdf.m1, Species~Density|Phrag_Presence, CIs = T)
 emmip(mdf.m1, Phrag_Presence~Density|Species, CIs = T)
 
-#Native biomass
+##phrag presence ####
+emm <- emmeans(mdf.m1, pairwise ~ Phrag_Presence, adjust = "tukey", type = "response")
+data1 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+data1
+
+ggplot(data = data1, aes(x = Phrag_Presence, y = response * 100)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = 100*(response - SE),
+                    ymax = 100*(response+SE)),
+                width=0, size=0.5) +
+  labs(x="Presence of *Phragmites*", y = "Model predicted native cover (%)") +
+  geom_text(aes(label = .group,  y = response * 100),
+            nudge_x = 0.1) +
+  theme(axis.title.x = ggtext::element_markdown())
+
+ggsave("native_cover_presence_model_means.jpeg")
+
+##species by density ####
+emm <- emmeans(mdf.m1, pairwise ~ Species * Density, adjust = "tukey", type = "response")
+data2 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+data2
+
+data2$.group
+group_list <- c("a", "a", "a","a", "ab", "abc", "abcd",
+                "bcde", "cde", "de", "ef", "ef", "ef", "fg",
+                "gh", "ghi", "ghi", "ghi", "hi", "hi", "hi",
+                "hi", "hi", "hi", "hi", "i")
+
+ggplot(data = data2, aes(x = reorder(Species,response), y = response * 100, shape = Density)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = 100*(response - SE),
+                    ymax = 100*(response+SE)),
+                width=0, size=0.5) +
+  labs(x="Species", y = "Model predicted native cover (%)") +
+  geom_text(aes(label = group_list,
+                vjust = .9, hjust = "left"),
+            nudge_x = .1,
+            check_overlap = TRUE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
+        axis.title.y = ggtext::element_markdown())
+
+ggsave("native_cover_species_model_means.jpeg")
+
+#Native biomass ####
 table(biomass$Species)
 mdf <- biomass %>%
   dplyr::filter(!is.na(Density),
@@ -62,6 +117,18 @@ mdf_avg <- mdf %>%
   dplyr::ungroup() 
 table(mdf_avg$nobs) #double check to make sure BICE is the only one with 2 observations
 summary(mdf_avg$Native.Biomass) #no 0s so log shouldnt be a problem
+
+
+mdf_avg$Phrag_Presence <- as.character(mdf_avg$Phrag_Presence)
+mdf_avg$Phrag_Presence[mdf_avg$Phrag_Presence == "W"] <- "Present"
+mdf_avg$Phrag_Presence[mdf_avg$Phrag_Presence == "WO"] <- "Absent"
+mdf_avg$Phrag_Presence <- as.factor(mdf_avg$Phrag_Presence)
+
+
+mdf_avg$Density <- as.character(mdf_avg$Density)
+mdf_avg$Density[mdf_avg$Density == "H"] <- "High"
+mdf_avg$Density[mdf_avg$Density == "L"] <- "Low"
+mdf_avg$Density <- as.factor(mdf_avg$Density)
 
 mdf.m1 <- glmmTMB(sqrt(Native.Biomass) ~ Phrag_Presence * Density * Species #* for interaction
                   + (1|Block),
@@ -103,7 +170,174 @@ pairs(mdf.m1.emm, simple = "Species")
 #the interaction effect is the phrag difference for high - the phrag difference for low - if we can get these, then we can compare - a contrast of contrasts
 #contrast vignettes and interaction vignettes 
 
-
-
 ##if I do just look at the species specific models, it should be pretty similar but not exactly because
 #it is now using contrasts only for that species instead of all of them
+
+emm <- emmeans(mdf.m1, pairwise ~ Species * Density * Phrag_Presence, adjust = "tukey", type = "response")
+data3 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+data3
+
+#I actually don't think the letters make sense for this
+ggplot(data = data3, aes(x = reorder(Species,response), y = response, shape = Density)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = (response - SE),
+                    ymax = (response+SE)),
+                width=0, size=0.5) +
+  labs(x="Species", y = "Model predicted native biomass (g)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
+        axis.title.y = ggtext::element_markdown()) +
+  facet_grid(~Phrag_Presence)
+
+ggsave("native_biomass_three-way_model_means.jpeg")
+
+# Phrag cover ####
+mdf <- greenhouse %>%
+  filter(Species != "PHAU", Phrag_Presence == "W",
+         Date_Cleaned == "2022-05-16")
+
+##plotResiduals wasn't working so Susan sent me this code to figure out why
+##You cannot have any missing values or 0 observations
+#see what variables have missing values
+mdf %>% 
+  select(Cover.Phrag, Species, Density, Block) %>%
+  summarise_all(list(~sum(is.na(.))))
+
+#drop observations with NA Cover.Phrag and refactor so that level is dropped
+with(mdf, table(Species, useNA = "ifany")) #no observations for PHAU
+
+mdf <- mdf %>%
+  drop_na(Cover.Phrag) %>%
+  mutate(Species = factor(Species))
+
+with(mdf, table(Species, useNA = "ifany")) #note absence of Phrag level
+
+mdf$Phrag_Presence <- as.character(mdf$Phrag_Presence)
+mdf$Phrag_Presence[mdf$Phrag_Presence == "W"] <- "Present"
+mdf$Phrag_Presence[mdf$Phrag_Presence == "WO"] <- "Absent"
+mdf$Phrag_Presence <- as.factor(mdf$Phrag_Presence)
+
+
+mdf$Density <- as.character(mdf$Density)
+mdf$Density[mdf$Density == "H"] <- "High"
+mdf$Density[mdf$Density == "L"] <- "Low"
+mdf$Density <- as.factor(mdf$Density)
+
+#back to model
+mdf.m1 <- glmmTMB(Cover.Phrag ~ Species * Density #* for interaction
+                  + (1|Block),
+                  data = mdf,
+                  family = beta_family #change the family to beta
+)
+
+summary(mdf.m1)
+
+simulateResiduals(mdf.m1, plot = T) 
+plotResiduals(mdf.m1, form= mdf$Species) 
+
+#library(car)
+car::Anova(mdf.m1) 
+emmip(mdf.m1, Species~Density, CIs = T)
+
+##Species
+emm <- emmeans(mdf.m1, pairwise ~ Species, adjust = "tukey", type = "response")
+data1 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+data1
+
+ggplot(data = data1, aes(x = reorder(Species, response), y = response * 100)) +
+  geom_point(size=2) +
+  ylim(c(0, 40)) +
+  geom_errorbar(aes(ymin = 100*(response - SE),
+                    ymax = 100*(response+SE)),
+                width=0, size=0.5) +
+  labs(x="Species", y = "Model predicted *Phragmites* cover (%)") +
+  geom_text(aes(label = .group,  y = response * 100),
+            nudge_y = 3.5, nudge_x = .2) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
+        axis.title.y = ggtext::element_markdown())
+
+ggsave("phrag_cover_model_means.jpeg")
+
+##Density
+emm <- emmeans(mdf.m1, pairwise ~ Density, adjust = "tukey", type = "response")
+data2 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+data2
+
+ggplot(data = data2, aes(x = Density, y = response * 100)) +
+  ylim(c(0, 30)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = 100*(response - SE),
+                    ymax = 100*(response+SE)),
+                width=0, size=0.5) +
+  labs(x="Density", y = "Model predicted *Phragmites* cover (%)") +
+  geom_text(aes(label = .group,  y = response * 100),
+            nudge_x = .1) +
+  theme(axis.title.y = ggtext::element_markdown())
+
+ggsave("phrag_cover_density_model_means.jpeg")
+
+# Phrag biomass ####
+mdf <- biomass %>%
+  filter(Species != "PHAU", Phrag_Presence == "W")
+
+mdf$Phrag_Presence <- as.character(mdf$Phrag_Presence)
+mdf$Phrag_Presence[mdf$Phrag_Presence == "W"] <- "Present"
+mdf$Phrag_Presence[mdf$Phrag_Presence == "WO"] <- "Absent"
+mdf$Phrag_Presence <- as.factor(mdf$Phrag_Presence)
+
+
+mdf$Density <- as.character(mdf$Density)
+mdf$Density[mdf$Density == "H"] <- "High"
+mdf$Density[mdf$Density == "L"] <- "Low"
+mdf$Density <- as.factor(mdf$Density)
+
+mdf.m1 <- glmmTMB(sqrt(Phrag.Biomass) ~ Species * Density #* for interaction
+                  + (1|Block),
+                  data = mdf,
+                  family = gaussian
+)
+
+summary(mdf.m1)
+#model specification probably okay because 12 obs and 3 blocks
+
+simulateResiduals(mdf.m1, plot = T) 
+plotResiduals(mdf.m1, form= mdf$Density)
+
+#library(car)
+Anova(mdf.m1) 
+emmip(mdf.m1, Species~Density, CIs = T)
+
+##Species ####
+emm <- emmeans(mdf.m1, pairwise ~ Species, adjust = "tukey", type = "response")
+data2 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+data2
+
+ggplot(data = data2, aes(x = reorder(Species, response), y = response)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = (response - SE),
+                    ymax = (response+SE)),
+                width=0, size=0.5) +
+  labs(x="Species", y = "Model predicted *Phragmites* biomass (g)") +
+  geom_text(aes(label = .group,  y = response),
+            nudge_y = 3.5) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
+        axis.title.y = ggtext::element_markdown())
+
+ggsave("phrag_biomass_model_means.jpeg")
+
+##Density ####
+emm <- emmeans(mdf.m1, pairwise ~ Density, adjust = "tukey", type = "response")
+data2 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+data2
+
+ggplot(data = data2, aes(x = Density, y = response)) +
+  ylim(c(0, 20)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = (response - SE),
+                    ymax = (response+SE)),
+                width=0, size=0.5) +
+  labs(x="Density", y = "Model predicted *Phragmites* biomass (g)") +
+  geom_text(aes(label = .group,  y = response),
+            nudge_x = .1) +
+  theme(axis.title.y = ggtext::element_markdown())
+
+ggsave("phrag_biomass_density_model_means.jpeg")
