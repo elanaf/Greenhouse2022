@@ -69,7 +69,7 @@ ggplot(data = data1, aes(x = Phrag_Presence, y = response * 100)) +
   geom_errorbar(aes(ymin = 100*(response - SE),
                     ymax = 100*(response+SE)),
                 width=0, size=0.5) +
-  labs(x="Presence of *Phragmites*", y = "Model predicted native cover (%)") +
+  labs(x="Presence of *Phragmites*", y = "Model Predicted Native Cover (%)") +
   geom_text(aes(label = .group,  y = response * 100),
             nudge_x = 0.1) +
   theme(axis.title.x = ggtext::element_markdown())
@@ -92,7 +92,7 @@ ggplot(data = data2, aes(x = reorder(Species,response), y = response * 100, shap
   geom_errorbar(aes(ymin = 100*(response - SE),
                     ymax = 100*(response+SE)),
                 width=0, size=0.5) +
-  labs(x="Species", y = "Model predicted native cover (%)") +
+  labs(x="Species", y = "Model Predicted Native Cover (%)") +
   geom_text(aes(label = group_list,
                 vjust = .9, hjust = "left"),
             nudge_x = .1,
@@ -183,7 +183,7 @@ ggplot(data = data3, aes(x = reorder(Species,response), y = response, shape = De
   geom_errorbar(aes(ymin = (response - SE),
                     ymax = (response+SE)),
                 width=0, size=0.5) +
-  labs(x="Species", y = "Model predicted native biomass (g)") +
+  labs(x="Species", y = "Model Predicted Native Biomass (g)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown()) +
   facet_grid(~Phrag_Presence)
@@ -249,7 +249,7 @@ ggplot(data = data1, aes(x = reorder(Species, response), y = response * 100)) +
   geom_errorbar(aes(ymin = 100*(response - SE),
                     ymax = 100*(response+SE)),
                 width=0, size=0.5) +
-  labs(x="Species", y = "Model predicted *Phragmites* cover (%)") +
+  labs(x="Species", y = "Model Predicted *Phragmites* Cover (%)") +
   geom_text(aes(label = .group,  y = response * 100),
             nudge_y = 3.5, nudge_x = .2) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
@@ -268,7 +268,7 @@ ggplot(data = data2, aes(x = Density, y = response * 100)) +
   geom_errorbar(aes(ymin = 100*(response - SE),
                     ymax = 100*(response+SE)),
                 width=0, size=0.5) +
-  labs(x="Density", y = "Model predicted *Phragmites* cover (%)") +
+  labs(x="Density", y = "Model Predicted *Phragmites* Cover (%)") +
   geom_text(aes(label = .group,  y = response * 100),
             nudge_x = .1) +
   theme(axis.title.y = ggtext::element_markdown())
@@ -316,7 +316,7 @@ ggplot(data = data2, aes(x = reorder(Species, response), y = response)) +
   geom_errorbar(aes(ymin = (response - SE),
                     ymax = (response+SE)),
                 width=0, size=0.5) +
-  labs(x="Species", y = "Model predicted *Phragmites* biomass (g)") +
+  labs(x="Species", y = "Model Predicted *Phragmites* Biomass (g)") +
   geom_text(aes(label = .group,  y = response),
             nudge_y = 3.5) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
@@ -335,7 +335,7 @@ ggplot(data = data2, aes(x = Density, y = response)) +
   geom_errorbar(aes(ymin = (response - SE),
                     ymax = (response+SE)),
                 width=0, size=0.5) +
-  labs(x="Density", y = "Model predicted *Phragmites* biomass (g)") +
+  labs(x="Density", y = "Model Predicted *Phragmites* Biomass (g)") +
   geom_text(aes(label = .group,  y = response),
             nudge_x = .1) +
   theme(axis.title.y = ggtext::element_markdown())
