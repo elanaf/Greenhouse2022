@@ -195,6 +195,7 @@ mdf <- greenhouse %>%
   filter(Species != "PHAU", Phrag_Presence == "W",
          Date_Cleaned == "2022-05-16")
 
+
 ##plotResiduals wasn't working so Susan sent me this code to figure out why
 ##You cannot have any missing values or 0 observations
 #see what variables have missing values
@@ -221,6 +222,11 @@ mdf$Density <- as.character(mdf$Density)
 mdf$Density[mdf$Density == "H"] <- "High"
 mdf$Density[mdf$Density == "L"] <- "Low"
 mdf$Density <- as.factor(mdf$Density)
+
+#change order of density and also labels for graphing
+mdf$Density <- factor(mdf$Density, levels = c("Low", "High"),
+                      labels = c("Low", "High")
+)
 
 #back to model
 mdf.m1 <- glmmTMB(Cover.Phrag ~ Species * Density #* for interaction
@@ -289,6 +295,12 @@ mdf$Density <- as.character(mdf$Density)
 mdf$Density[mdf$Density == "H"] <- "High"
 mdf$Density[mdf$Density == "L"] <- "Low"
 mdf$Density <- as.factor(mdf$Density)
+
+#change order of density and also labels for graphing
+mdf$Density <- factor(mdf$Density, levels = c("Low", "High"),
+                      labels = c("Low", "High")
+)
+
 
 mdf.m1 <- glmmTMB(sqrt(Phrag.Biomass) ~ Species * Density #* for interaction
                   + (1|Block),

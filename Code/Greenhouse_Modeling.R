@@ -105,12 +105,12 @@ mdf.m1 <- glmmTMB(Cover.Native ~ Phrag_Presence * Density #* for interaction
                   )
 
 
-summary(mdf.m1)
+#summary(mdf.m1)
 #model specification probably okay because 12 obs and 3 blocks
 
 
-simulateResiduals(mdf.m1, plot = T) 
-plotResiduals(mdf.m1, form= mdf$Phrag_Presence)
+#simulateResiduals(mdf.m1, plot = T) 
+#plotResiduals(mdf.m1, form= mdf$Phrag_Presence)
 
 #A lot of the residual estimates look really bad but I checked with Susan and she said it is fine
 #There is not a lot of variation in the data, so there are not a lot of residuals to be checked
@@ -123,7 +123,7 @@ emmip(mdf.m1, Density ~ Phrag_Presence, CIs = T)
 
 ##Model to run for biomass ####
 mdf <- biomass %>%
-  filter(Species == "EPCI", !is.na(Density))
+  filter(Species == "SCAC", !is.na(Density))
 
 mdf.m1 <- glmmTMB(sqrt(Native.Biomass) ~ Phrag_Presence * Density #* for interaction
                   + (1|Block),
@@ -131,11 +131,11 @@ mdf.m1 <- glmmTMB(sqrt(Native.Biomass) ~ Phrag_Presence * Density #* for interac
                   family = gaussian
 )
 
-summary(mdf.m1)
+#summary(mdf.m1)
 #model specification probably okay because 12 obs and 3 blocks
 
-simulateResiduals(mdf.m1, plot = T) 
-plotResiduals(mdf.m1, form= mdf$Phrag_Presence)
+#simulateResiduals(mdf.m1, plot = T) 
+#plotResiduals(mdf.m1, form= mdf$Phrag_Presence)
 
 #library(car)
 Anova(mdf.m1) 
