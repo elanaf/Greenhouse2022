@@ -7,6 +7,7 @@ library(emmeans)
 library(car)
 library(multcompView)
 library(gridExtra)
+library(patchwork)
 
 greenhouse$Density <- as.factor(greenhouse$Density)
 greenhouse$Phrag_Presence <- as.factor(greenhouse$Phrag_Presence)
@@ -14,14 +15,9 @@ greenhouse$Species <- as.factor(greenhouse$Species)
 
 options(contrasts = c("contr.sum", "contr.poly"))
 
-#take out species with missing observations
-
-#check <- greenhouse %>%
-#filter(Date_Cleaned == "2022-05-16",
-#       Cover.Native < 5.0)
-#Species that did not really grow: JUTO LWO 1, JUGE LW 1, SYCI HW 1, SCAM LWO 1, 
-#JUTO LW 2, SCAM LWO 2, SCAM LW 2, JUTO HW 2, JUGE LWO 2, JUTO HWO 3, BOMA LW 3, JUTO LW 3,
-#JUTO LWO 3, SCAM LWO 3, BOMA HW 3, BOMA LWO 3, BOMA HWO 2, JUGE LW 3
+#for graphing
+color1 <- c("orange", "purple4")
+color2 <- c("darkblue", "red3")
 
 #Native cover ####
 mdf <- greenhouse %>%
@@ -61,44 +57,56 @@ emmip(mdf.m1, Phrag_Presence~Density|Species, CIs = T)
 
 ##phrag presence ####
 emm <- emmeans(mdf.m1, pairwise ~ Phrag_Presence, adjust = "tukey", type = "response")
-data1 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+data1 <- multcomp::cld(emm$emmeans, alpha = 0.1, Letters = letters)
 data1
 
-ggplot(data = data1, aes(x = Phrag_Presence, y = response * 100)) +
+ggplot(data = data1, aes(x = Phrag_Presence, y = response * 100,
+                         color = Phrag_Presence)) +
   geom_point(size=2) +
   geom_errorbar(aes(ymin = 100*(response - SE),
                     ymax = 100*(response+SE)),
                 width=0, size=0.5) +
-  labs(x="Presence of *Phragmites*", y = "Model Predicted Native Cover (%)") +
+  labs(x="Presence of *Phragmites*", y = "Model Predicted Native Cover (%)",
+       title = "(a)") +
   geom_text(aes(label = .group,  y = response * 100),
-            nudge_x = 0.1) +
-  theme(axis.title.x = ggtext::element_markdown())
+            nudge_x = 0.1, color = "black") +
+  theme(axis.title.x = ggtext::element_markdown(),
+        plot.title = element_text(size = 9),
+        legend.position = "none") +
+  scale_color_manual(values = color1)
 
 ggsave("native_cover_presence_model_means.jpeg")
 
 ##species by density ####
 emm <- emmeans(mdf.m1, pairwise ~ Species * Density, adjust = "tukey", type = "response")
-data2 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+data2 <- multcomp::cld(emm$emmeans, alpha = 0.1, Letters = letters)
 data2
 
 data2$.group
-group_list <- c("a", "a", "a","a", "ab", "abc", "abcd",
-                "bcde", "cde", "de", "ef", "ef", "ef", "fg",
-                "gh", "ghi", "ghi", "ghi", "hi", "hi", "hi",
-                "hi", "hi", "hi", "hi", "i")
+group_list <- c("a", "a", "ab", "ab", 
+                "abc", "abc", "bcd", "cde",
+                "def", "def", "efg", "efg",
+                "fg", "gh", "hi", "hij",
+                "hij", "ij", "ij","ij",
+                "ij","ij","ij","ij","ij",
+                "j")
 
-ggplot(data = data2, aes(x = reorder(Species,response), y = response * 100, shape = Density)) +
+ggplot(data = data2, aes(x = reorder(Species,response), y = response * 100, color = Density)) +
   geom_point(size=2) +
   geom_errorbar(aes(ymin = 100*(response - SE),
                     ymax = 100*(response+SE)),
                 width=0, size=0.5) +
-  labs(x="Species", y = "Model Predicted Native Cover (%)") +
+  labs(x="Species", y = "Model Predicted Native Cover (%)",
+       title = '(b)') +
   geom_text(aes(label = group_list,
                 vjust = .9, hjust = "left"),
-            nudge_x = .1,
-            check_overlap = TRUE) +
+            nudge_x = .15,
+            check_overlap = TRUE,
+            color = "black") +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
-        axis.title.y = ggtext::element_markdown())
+        axis.title.y = ggtext::element_markdown(),
+        plot.title = element_text(size = 9)) +
+  scale_color_manual(values = color2)
 
 ggsave("native_cover_species_model_means.jpeg")
 
@@ -173,6 +181,7 @@ pairs(mdf.m1.emm, simple = "Species")
 ##if I do just look at the species specific models, it should be pretty similar but not exactly because
 #it is now using contrasts only for that species instead of all of them
 
+## Three way ####
 emm <- emmeans(mdf.m1, pairwise ~ Species * Density * Phrag_Presence, adjust = "tukey", type = "response")
 data3 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
 data3
@@ -229,24 +238,24 @@ mdf$Density <- factor(mdf$Density, levels = c("Low", "High"),
 )
 
 #back to model
-mdf.m1 <- glmmTMB(Cover.Phrag ~ Species * Density #* for interaction
+mdf.m5 <- glmmTMB(Cover.Phrag ~ Species * Density #* for interaction
                   + (1|Block),
                   data = mdf,
                   family = beta_family #change the family to beta
 )
 
-summary(mdf.m1)
+summary(mdf.m5)
 
-simulateResiduals(mdf.m1, plot = T) 
-plotResiduals(mdf.m1, form= mdf$Species) 
+simulateResiduals(mdf.m5, plot = T) 
+plotResiduals(mdf.m5, form= mdf$Species) 
 
 #library(car)
-car::Anova(mdf.m1) 
-emmip(mdf.m1, Species~Density, CIs = T)
+car::Anova(mdf.m5) 
+emmip(mdf.m5, Species~Density, CIs = T)
 
-##Species
-emm <- emmeans(mdf.m1, pairwise ~ Species, adjust = "tukey", type = "response")
-data1 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+##Species ####
+emm <- emmeans(mdf.m5, pairwise ~ Species, adjust = "tukey", type = "response")
+data1 <- multcomp::cld(emm$emmeans, alpha = 0.1, Letters = letters)
 data1
 
 ggplot(data = data1, aes(x = reorder(Species, response), y = response * 100)) +
@@ -257,18 +266,18 @@ ggplot(data = data1, aes(x = reorder(Species, response), y = response * 100)) +
                 width=0, size=0.5) +
   labs(x="Species", y = "Model Predicted *Phragmites* Cover (%)") +
   geom_text(aes(label = .group,  y = response * 100),
-            nudge_y = 3.5, nudge_x = .2) +
+            nudge_y = 4, nudge_x = .3, size = 3) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown())
 
 ggsave("phrag_cover_model_means.jpeg")
 
-##Density
-emm <- emmeans(mdf.m1, pairwise ~ Density, adjust = "tukey", type = "response")
-data2 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+##Density ####
+emm <- emmeans(mdf.m5, pairwise ~ Density, adjust = "tukey", type = "response")
+data2 <- multcomp::cld(emm$emmeans, alpha = 0.1, Letters = letters)
 data2
 
-ggplot(data = data2, aes(x = Density, y = response * 100)) +
+ggplot(data = data2, aes(x = Density, y = response * 100, color = Density)) +
   ylim(c(0, 30)) +
   geom_point(size=2) +
   geom_errorbar(aes(ymin = 100*(response - SE),
@@ -276,8 +285,9 @@ ggplot(data = data2, aes(x = Density, y = response * 100)) +
                 width=0, size=0.5) +
   labs(x="Density", y = "Model Predicted *Phragmites* Cover (%)") +
   geom_text(aes(label = .group,  y = response * 100),
-            nudge_x = .1) +
-  theme(axis.title.y = ggtext::element_markdown())
+            nudge_x = .2, color = "black") +
+  theme(axis.title.y = ggtext::element_markdown()) +
+  scale_color_manual(values = color2)
 
 ggsave("phrag_cover_density_model_means.jpeg")
 
@@ -302,46 +312,46 @@ mdf$Density <- factor(mdf$Density, levels = c("Low", "High"),
 )
 
 
-mdf.m1 <- glmmTMB(sqrt(Phrag.Biomass) ~ Species * Density #* for interaction
+mdf.m6 <- glmmTMB(sqrt(Phrag.Biomass) ~ Species * Density #* for interaction
                   + (1|Block),
                   data = mdf,
                   family = gaussian
 )
 
-summary(mdf.m1)
+summary(mdf.m6)
 #model specification probably okay because 12 obs and 3 blocks
 
-simulateResiduals(mdf.m1, plot = T) 
-plotResiduals(mdf.m1, form= mdf$Density)
+simulateResiduals(mdf.m6, plot = T) 
+plotResiduals(mdf.m6, form= mdf$Density)
 
 #library(car)
-Anova(mdf.m1) 
-emmip(mdf.m1, Species~Density, CIs = T)
+Anova(mdf.m6) 
+emmip(mdf.m6, Species~Density, CIs = T)
 
 ##Species ####
-emm <- emmeans(mdf.m1, pairwise ~ Species, adjust = "tukey", type = "response")
-data2 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
-data2
+emm <- emmeans(mdf.m6, pairwise ~ Species, adjust = "tukey", type = "response")
+data3 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+data3
 
-ggplot(data = data2, aes(x = reorder(Species, response), y = response)) +
+ggplot(data = data3, aes(x = reorder(Species, response), y = response)) +
   geom_point(size=2) +
   geom_errorbar(aes(ymin = (response - SE),
                     ymax = (response+SE)),
                 width=0, size=0.5) +
   labs(x="Species", y = "Model Predicted *Phragmites* Biomass (g)") +
   geom_text(aes(label = .group,  y = response),
-            nudge_y = 3.5) +
+            nudge_y = 3.5, size = 3) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown())
 
 ggsave("phrag_biomass_model_means.jpeg")
 
 ##Density ####
-emm <- emmeans(mdf.m1, pairwise ~ Density, adjust = "tukey", type = "response")
-data2 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
-data2
+emm <- emmeans(mdf.m6, pairwise ~ Density, adjust = "tukey", type = "response")
+data4 <- multcomp::cld(emm$emmeans, alpha = 0.05, Letters = letters)
+data4
 
-ggplot(data = data2, aes(x = Density, y = response)) +
+ggplot(data = data4, aes(x = Density, y = response)) +
   ylim(c(0, 20)) +
   geom_point(size=2) +
   geom_errorbar(aes(ymin = (response - SE),
@@ -349,7 +359,112 @@ ggplot(data = data2, aes(x = Density, y = response)) +
                 width=0, size=0.5) +
   labs(x="Density", y = "Model Predicted *Phragmites* Biomass (g)") +
   geom_text(aes(label = .group,  y = response),
-            nudge_x = .1) +
+            nudge_x = .2) +
   theme(axis.title.y = ggtext::element_markdown())
 
 ggsave("phrag_biomass_density_model_means.jpeg")
+
+
+# Putting graphs side by side ####
+##Phrag Density ####
+a <- ggplot(data = data2, aes(x = Density, y = response * 100, color = Density)) +
+  ylim(c(0, 30)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = 100*(response - SE),
+                    ymax = 100*(response+SE)),
+                width=0, size=0.5) +
+  labs(x="Density", y = "Model Predicted *Phragmites* Cover (%)",
+       title = "(a)") +
+  geom_text(aes(label = .group,  y = response * 100),
+            nudge_x = .2, color = "black") +
+  theme(axis.title.y = ggtext::element_markdown(),
+        plot.title = element_text(size = 9),
+        legend.position = "none") +
+  scale_color_manual(values = color2) 
+
+
+b <- ggplot(data = data4, aes(x = Density, y = response, color = Density)) +
+  ylim(c(0, 20)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = (response - SE),
+                    ymax = (response+SE)),
+                width=0, size=0.5) +
+  labs(x="Density", y = "Model Predicted *Phragmites* Biomass (g)",
+       title = "(b)") +
+  geom_text(aes(label = .group,  y = response),
+            nudge_x = .2, color = "black") +
+  theme(axis.title.y = ggtext::element_markdown(),
+        plot.title = element_text(size = 9),
+        legend.position = "none") +
+  scale_color_manual(values = color2)
+
+
+a + b
+ggsave("phrag_cover_biomass_model_means_tog.jpeg")
+
+## Phrag species ####
+c <- ggplot(data = data1, aes(x = reorder(Species, response), y = response * 100)) +
+  geom_point(size=2) +
+  ylim(c(0, 40)) +
+  geom_errorbar(aes(ymin = 100*(response - SE),
+                    ymax = 100*(response+SE)),
+                width=0, size=0.5) +
+  labs(x="Species", y = "Model Predicted *Phragmites* Cover (%)",
+       title = "(a)") +
+  geom_text(aes(label = .group,  y = response * 100),
+            nudge_y = 4, size = 3) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
+        axis.title.y = ggtext::element_markdown(size = 9),
+        plot.title = element_text(size = 9))
+
+d <- ggplot(data = data3, aes(x = reorder(Species, response), y = response)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = (response - SE),
+                    ymax = (response+SE)),
+                width=0, size=0.5) +
+  labs(x="Species", y = "Model Predicted *Phragmites* Biomass (g)",
+       title = "(b)") +
+  geom_text(aes(label = .group,  y = response),
+            nudge_y = 3.5, size = 3) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
+        axis.title.y = ggtext::element_markdown(size = 9),
+        plot.title = element_text(size = 9))
+
+c / d
+ggsave("phrag_cover_biomass_model_means_species.jpeg")
+
+##Native cover graphs ####
+e <- ggplot(data = data1, aes(x = Phrag_Presence, y = response * 100,
+                              color = Phrag_Presence)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = 100*(response - SE),
+                    ymax = 100*(response+SE)),
+                width=0, size=0.5) +
+  labs(x="Presence of *Phragmites*", y = "Model Predicted Native Cover (%)",
+       title = "(a)") +
+  geom_text(aes(label = .group,  y = response * 100),
+            nudge_x = 0.1, color = "black") +
+  theme(axis.title.x = ggtext::element_markdown(),
+        plot.title = element_text(size = 9),
+        legend.position = "none") +
+  scale_color_manual(values = color1)
+
+
+f <- ggplot(data = data2, aes(x = reorder(Species,response), y = response * 100, color = Density)) +
+  geom_point(size=2) +
+  geom_errorbar(aes(ymin = 100*(response - SE),
+                    ymax = 100*(response+SE)),
+                width=0, size=0.5) +
+  labs(x="Species", y = "Model Predicted Native Cover (%)",
+       title = '(b)') +
+  geom_text(aes(label = group_list,
+                vjust = .9, hjust = "left"),
+            nudge_x = .15,
+            check_overlap = TRUE,
+            color = "black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
+        axis.title.y = ggtext::element_markdown(),
+        plot.title = element_text(size = 9)) +
+  scale_color_manual(values = color2)
+e + f
+ggsave("native_cover_model_means_both.jpeg")

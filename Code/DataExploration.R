@@ -1,33 +1,7 @@
 library(tidyverse)
+library(patchwork)
 load("main_dfs.RData")
 #Graphs for native species model####
-
-## Native height ####
-#how does native height change over time by density and presence of phrag
-height_native <- greenhouse %>% 
-  filter(Species != "PHAU") %>%
-  #pull out the phrag panel because no data
-  ggplot(aes(x = Date_Cleaned, y = Height.Native, color = Phrag_Presence, shape = Density)) +
-  #using the means of the blocks
-  stat_summary(aes(group = interaction(Density, Phrag_Presence)),
-               fun = mean, geom = "point", size = 2) +
-  #error bars added
-  stat_summary(aes(group = interaction(Density, Phrag_Presence), width = .5),
-               fun.data = mean_se, geom = "errorbar") +
-  #add a line to connect the dates
-  stat_summary(aes(group = interaction(Density, Phrag_Presence)),
-              fun = mean, geom = "line") +
-  facet_wrap(~Species) +
-  theme(legend.position = 'bottom',
-        axis.text.x = element_text(angle = 45, hjust = 0.9)) +
-  labs(x = "Date", y = "Native Height (cm)", color = "Phragmites Presence", shape = "Density") +
-  scale_color_hue(labels = c('Present', 'Absent')) + #change the legend labels
-  scale_shape(labels = c("High", "Low")) 
-
-height_native
-
-ggsave(filename = "height_native.jpeg", 
-       device = "jpeg")
 
 #if I wanted to do just low density
 # greenhouse %>% 
@@ -45,22 +19,24 @@ ggsave(filename = "height_native.jpeg",
 #how does native cover change over time by density and presence of phrag
 cover_native <- greenhouse %>% 
   filter(Species != "PHAU") %>%
-  ggplot(aes(x = Date_Cleaned, y = Cover.Native, color = Phrag_Presence, shape = Density)) +
+  ggplot(aes(x = Date_Cleaned, y = Cover.Native, shape = Phrag_Presence, color = Density)) +
   #using the means of the blocks
   stat_summary(aes(group = interaction(Density, Phrag_Presence)),
                fun = mean, geom = "point", size = 2) +
   #error bars added
-  stat_summary(aes(group = interaction(Density, Phrag_Presence), width = .5),
+  stat_summary(aes(group = interaction(Density, Phrag_Presence), width = 0),
                fun.data = mean_se, geom = "errorbar") +
   #add a line to connect the dates
   stat_summary(aes(group = interaction(Density, Phrag_Presence)),
                fun = mean, geom = "line") +
   facet_wrap(~Species) +
   theme(legend.position = 'bottom',
-        axis.text.x = element_text(angle = 45, hjust = 0.9)) +
+        axis.text.x = element_text(angle = 45, hjust = 0.9),
+        legend.title =element_text(size = 10),
+        legend.text = element_text(size = 9)) +
   labs(x = "Date", y = "Native Cover (%)", color = "Phragmites Presence", shape = "Density") +
-  scale_color_hue(labels = c('Present', 'Absent')) + #change the legend labels
-  scale_shape(labels = c("High", "Low"))
+  scale_color_manual(values = c("red3", "darkblue"), labels = c("High", "Low")) + #change the legend labels
+  scale_shape(labels = c("Present", "Absent"))
 
 cover_native
 
@@ -125,13 +101,13 @@ biomass_native <- biomass %>%
              y = Native.Biomass, color = Density)) +
   #using the means of the blocks
   stat_summary(aes(group = interaction(Species, Density)),
-               fun = mean, geom = "point", size = 2, shape = 1) +
+               fun = mean, geom = "point", size = 2) +
   #error bars added
-  stat_summary(aes(group = interaction(Species, Density), width = .5),
+  stat_summary(aes(group = interaction(Species, Density), width = 0),
                fun.data = mean_se, geom = "errorbar") +
   labs(x = "Species", y = "Native Biomass (g)", color = "Density") +
   facet_wrap(~Phrag_Presence) +
-  scale_color_hue(labels = c('High', 'Low')) + #change the legend labels
+  scale_color_manual(labels = c('High', 'Low'), values = c("red3", "darkblue")) + #change the legend labels
   theme(legend.title = ggtext::element_markdown(),
         legend.text = element_text(),#change legend size
         axis.text.x = element_text(angle = 45, hjust = 0.9)) 
@@ -156,36 +132,6 @@ ggsave(filename = "biomass_native.jpeg",
 
 #Graphs about Phrag####
 
-##Phrag height ####
-#how does phrag height change over time by density
-greenhouse$Species <- factor(greenhouse$Species, #make PHAU last
-                     levels = c("BICE", 'BOMA', 'DISP', 'EPCI', 'EUMA',
-                                'EUOC', 'HENU', 'JUAR', 'JUGE', 'JUTO',
-                                'MUAS', 'PUNU', 'RUMA', 'SCAC', 'SCAM',
-                                'SCPU', 'SOCA', 'SYCI', 'PHAU'))
-height_phrag <- greenhouse %>%
-  ggplot(aes(x = Date_Cleaned, y = Height.Phrag, color= Density)) +
-  #using the means of the blocks
-  stat_summary(aes(group = Density),
-               fun = mean, geom = "point") +
-  #add a line to connect the dates
-  stat_summary(aes(group = Density),
-               fun = mean, geom = "line") +
-  #error bars added
-  stat_summary(aes(group = Density, width = .5),
-               fun.data = mean_se, geom = "errorbar") +
-  facet_wrap(~Species) +
-  theme(legend.position = 'bottom',
-        axis.text.x = element_text(angle = 45, hjust = 0.9)) +
-  labs(x = "Date", y = "Phragmites Height (cm)", color = "Native Seeding Density") +
-  scale_color_hue(labels = c("High", "Low", "Control")) 
-
-height_phrag
-
-ggsave(filename = "height_phrag.jpeg", 
-       device = "jpeg")
-
-
 ## Phrag cover ####
 #how does phrag cover change over time by density
 greenhouse$Species <- factor(greenhouse$Species, #make PHAU last
@@ -202,13 +148,13 @@ cover_phrag <- greenhouse %>%
   stat_summary(aes(group = Density),
                fun = mean, geom = "line") +
   #error bars added
-  stat_summary(aes(group = Density, width = .5),
+  stat_summary(aes(group = Density, width = 0),
                fun.data = mean_se, geom = "errorbar") +
   facet_wrap(~Species) +
   theme(legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, hjust = 0.9)) +
   labs(x = "Date", y = "*Phragmites* Cover (%)", color = "Native Seeding Density") +
-  scale_color_hue(labels = c("High", "Low", "Control")) +
+  scale_color_manual(labels = c("High", "Low", "Control"), values = c("red3", "darkblue", "gray")) +
   theme(axis.title.y = ggtext::element_markdown())
 
 cover_phrag
@@ -238,12 +184,12 @@ biomass_phrag <- biomass %>%
              y = Phrag.Biomass, color = Density)) +
   #using the means of the blocks
   stat_summary(aes(group = interaction(Species, Density)),
-               fun = mean, geom = "point", size = 2, shape = 1) +
+               fun = mean, geom = "point", size = 2) +
   #error bars added
-  stat_summary(aes(group = interaction(Species, Density), width = .5),
+  stat_summary(aes(group = interaction(Species, Density), width = 0),
                fun.data = mean_se, geom = "errorbar") +
   labs(x = "Species", y = "*Phragmites* Biomass (g)", color = "Density") +
-  scale_color_hue(labels = c('High', 'Low', "Control"))+ #change the legend labels
+  scale_color_manual(labels = c('High', 'Low', "Control"), values = c("red3", "darkblue", "grey"))+ #change the legend labels
   theme(axis.title.y = ggtext::element_markdown(),
         axis.text.x = element_text(angle = 45, hjust = 0.9))
 
@@ -495,7 +441,7 @@ final.biomass.red <- final.biomass.red %>%
 #                position = position_dodge(0.95)) 
 
 #I need to calculate and manually reorder because NAs throwing off my graph
-#final.data.red %>% 
+final.data.red %>% 
   group_by(Species, Density) %>% 
   mutate(mean = mean(Pos.Red, na.rm = TRUE)) %>% 
   arrange(mean) %>% 
@@ -519,7 +465,7 @@ cover.red <- final.data.red %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown()) +
   labs(y = "Proportion Reduction in *Phragmites* Cover", x = "Species") +
-scale_color_hue(labels = c('High', 'Low')) #change the legend labels
+scale_color_manual(labels = c('High', 'Low'), values = c("red3", "darkblue")) #change the legend labels
 
 cover.red
 
@@ -547,13 +493,54 @@ biomass.red <- final.biomass.red %>%
                position = position_dodge(0.95)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown()) +
-  labs(y = "Proportion Reduction of *Phragmites* Biomass", x = "Species")+
-  scale_color_hue(labels = c('High', 'Low')) #change the legend labels
+  labs(y = "Proportion Reduction of *Phragmites* Biomass", x = "Species") +
+  scale_color_manual(labels = c('High', 'Low'), values = c("red3", "darkblue"))  #change the legend labels
 
 biomass.red
 
 ggsave(filename = "biomass_reduction.jpeg", 
        device = "jpeg")
+
+### Put them together ####
+cover.red <- final.data.red %>% 
+  filter(Species != "PHAU") %>%
+  mutate(Species = factor(Species,
+                          levels = c("SCAM", "JUAR", "SCAC",
+                                     "JUGE", "SYCI", "MUAS", "PUNU",
+                                     "BOMA", "SOCA", "SCPU", "EUOC", "JUTO",
+                                     "DISP", "EUMA", "BICE", "EPCI",
+                                     "RUMA", "HENU"))) %>% 
+  ggplot(aes(x = Species, y = Pos.Red, color = Density)) +
+  stat_summary(aes(group = Density),
+               fun = mean, geom = "point", 
+               position = position_dodge(0.95)) +
+  stat_summary(aes(group = Density, width = 0),
+               fun.data = mean_se, geom = "errorbar",
+               position = position_dodge(0.95)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
+        axis.title.y = ggtext::element_markdown(size = 9)) +
+  labs(y = "Proportion Reduction in *Phragmites* Cover", x = "") +
+  scale_color_manual(labels = c('High', 'Low'), values = c("red3", "darkblue")) #change the legend labels
+
+
+biomass.red <- final.biomass.red %>%
+  filter(Species != "PHAU") %>%
+  ggplot(aes(x = reorder(Species, Pos.Red), y = Pos.Red, color = Density)) +
+  stat_summary(aes(group = Density),
+               fun = mean, geom = "point", 
+               position = position_dodge(0.95)) +
+  stat_summary(aes(group = Density, width = 0),
+               fun.data = mean_se, geom = "errorbar",
+               position = position_dodge(0.95)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
+        axis.title.y = ggtext::element_markdown(size = 9),
+        axis.title.x = element_text(size = 10)) +
+  labs(y = "Proportion Reduction of *Phragmites* Biomass", x = "Species") +
+  scale_color_manual(labels = c('High', 'Low'), values = c("red3", "darkblue"))  #change the legend labels
+
+cover.red / biomass.red
+
+ggsave("red_both.jpeg")
 
 #Get the actual numbers
 final_means_cover <- final.data.red %>%
