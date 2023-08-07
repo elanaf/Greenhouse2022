@@ -123,7 +123,7 @@ emmip(mdf.m1, Density ~ Phrag_Presence, CIs = T)
 
 ##Model to run for biomass ####
 mdf <- biomass %>%
-  filter(Species == "SCAC", !is.na(Density))
+  filter(Species == "SOCA", !is.na(Density))
 
 mdf.m1 <- glmmTMB(sqrt(Native.Biomass) ~ Phrag_Presence * Density #* for interaction
                   + (1|Block),

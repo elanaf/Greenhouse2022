@@ -32,9 +32,9 @@ cover_native <- greenhouse %>%
   facet_wrap(~Species) +
   theme(legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, hjust = 0.9),
-        legend.title =element_text(size = 10),
-        legend.text = element_text(size = 9)) +
-  labs(x = "Date", y = "Native Cover (%)", color = "Phragmites Presence", shape = "Density") +
+        legend.title =ggtext::element_markdown(size = 10),
+        legend.text = ggtext::element_markdown(size = 9)) +
+  labs(x = "Date", y = "Proportional Native Cover", color = "Density", shape = "*P.australis* Presence") +
   scale_color_manual(values = c("red3", "darkblue"), labels = c("High", "Low")) + #change the legend labels
   scale_shape(labels = c("Present", "Absent"))
 
@@ -105,12 +105,13 @@ biomass_native <- biomass %>%
   #error bars added
   stat_summary(aes(group = interaction(Species, Density), width = 0),
                fun.data = mean_se, geom = "errorbar") +
-  labs(x = "Species", y = "Native Biomass (g)", color = "Density") +
+  labs(x = "Native Species Identity", y = "Native Biomass (g)", color = "Density") +
   facet_wrap(~Phrag_Presence) +
   scale_color_manual(labels = c('High', 'Low'), values = c("red3", "darkblue")) + #change the legend labels
   theme(legend.title = ggtext::element_markdown(),
         legend.text = element_text(),#change legend size
-        axis.text.x = element_text(angle = 45, hjust = 0.9)) 
+        axis.text.x = element_text(angle = 45, hjust = 0.9),
+        legend.position = "bottom") 
 
 biomass_native
 
@@ -153,7 +154,7 @@ cover_phrag <- greenhouse %>%
   facet_wrap(~Species) +
   theme(legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, hjust = 0.9)) +
-  labs(x = "Date", y = "*Phragmites* Cover (%)", color = "Native Seeding Density") +
+  labs(x = "Date", y = "*P.australis* Proportional Cover", color = "Native Seeding Density") +
   scale_color_manual(labels = c("High", "Low", "Control"), values = c("red3", "darkblue", "gray")) +
   theme(axis.title.y = ggtext::element_markdown())
 
@@ -188,7 +189,7 @@ biomass_phrag <- biomass %>%
   #error bars added
   stat_summary(aes(group = interaction(Species, Density), width = 0),
                fun.data = mean_se, geom = "errorbar") +
-  labs(x = "Species", y = "*Phragmites* Biomass (g)", color = "Density") +
+  labs(x = "Native Species Identity", y = "*P.australis* Biomass (g)", color = "Density") +
   scale_color_manual(labels = c('High', 'Low', "Control"), values = c("red3", "darkblue", "grey"))+ #change the legend labels
   theme(axis.title.y = ggtext::element_markdown(),
         axis.text.x = element_text(angle = 45, hjust = 0.9))
@@ -464,7 +465,7 @@ cover.red <- final.data.red %>%
                position = position_dodge(0.95)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown()) +
-  labs(y = "Proportion Reduction in *Phragmites* Cover", x = "Species") +
+  labs(y = "Proportion Reduction in *P.australis* Cover", x = "Native Species Identity") +
 scale_color_manual(labels = c('High', 'Low'), values = c("red3", "darkblue")) #change the legend labels
 
 cover.red
@@ -493,7 +494,7 @@ biomass.red <- final.biomass.red %>%
                position = position_dodge(0.95)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown()) +
-  labs(y = "Proportion Reduction of *Phragmites* Biomass", x = "Species") +
+  labs(y = "Proportion Reduction of *P.australis* Biomass", x = "Native Species Identity") +
   scale_color_manual(labels = c('High', 'Low'), values = c("red3", "darkblue"))  #change the legend labels
 
 biomass.red
@@ -518,8 +519,9 @@ cover.red <- final.data.red %>%
                fun.data = mean_se, geom = "errorbar",
                position = position_dodge(0.95)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
-        axis.title.y = ggtext::element_markdown(size = 9)) +
-  labs(y = "Proportion Reduction in *Phragmites* Cover", x = "") +
+        axis.title.y = ggtext::element_markdown(size = 11),
+        plot.title=element_text(size = 9)) +
+  labs(y = "Proportion Reduction in <br> *P.australis* Cover", x = "", title = "(a)") +
   scale_color_manual(labels = c('High', 'Low'), values = c("red3", "darkblue")) #change the legend labels
 
 
@@ -533,9 +535,10 @@ biomass.red <- final.biomass.red %>%
                fun.data = mean_se, geom = "errorbar",
                position = position_dodge(0.95)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
-        axis.title.y = ggtext::element_markdown(size = 9),
-        axis.title.x = element_text(size = 10)) +
-  labs(y = "Proportion Reduction of *Phragmites* Biomass", x = "Species") +
+        axis.title.y = ggtext::element_markdown(size = 11),
+        axis.title.x = element_text(size = 10),
+        plot.title=element_text(size = 9)) +
+  labs(y = "Proportion Reduction of <br> *P.australis* Biomass", x = "Native Species Identity", title = "(b)") +
   scale_color_manual(labels = c('High', 'Low'), values = c("red3", "darkblue"))  #change the legend labels
 
 cover.red / biomass.red

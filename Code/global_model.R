@@ -373,7 +373,7 @@ a <- ggplot(data = data2, aes(x = Density, y = response * 100, color = Density))
   geom_errorbar(aes(ymin = 100*(response - SE),
                     ymax = 100*(response+SE)),
                 width=0, size=0.5) +
-  labs(x="Density", y = "Model Predicted *Phragmites* Cover (%)",
+  labs(x="Density", y = "Model Predicted Proportional *P.australis* Cover",
        title = "(a)") +
   geom_text(aes(label = .group,  y = response * 100),
             nudge_x = .2, color = "black") +
@@ -389,7 +389,7 @@ b <- ggplot(data = data4, aes(x = Density, y = response, color = Density)) +
   geom_errorbar(aes(ymin = (response - SE),
                     ymax = (response+SE)),
                 width=0, size=0.5) +
-  labs(x="Density", y = "Model Predicted *Phragmites* Biomass (g)",
+  labs(x="Density", y = "Model Predicted *P.australis* Biomass (g)",
        title = "(b)") +
   geom_text(aes(label = .group,  y = response),
             nudge_x = .2, color = "black") +
@@ -400,21 +400,21 @@ b <- ggplot(data = data4, aes(x = Density, y = response, color = Density)) +
 
 
 a + b
-ggsave("phrag_cover_biomass_model_means_tog.jpeg")
+ggsave("phrag_cover_biomass_model_means_tog.jpeg", width =800, height = 1050, units = c("px"))
 
 ## Phrag species ####
-c <- ggplot(data = data1, aes(x = reorder(Species, response), y = response * 100)) +
+c <- ggplot(data = data1, aes(x = reorder(Species, response), y = response)) +
   geom_point(size=2) +
-  ylim(c(0, 40)) +
-  geom_errorbar(aes(ymin = 100*(response - SE),
-                    ymax = 100*(response+SE)),
+  ylim(c(0, .5)) +
+  geom_errorbar(aes(ymin = (response - SE),
+                    ymax = (response+SE)),
                 width=0, size=0.5) +
-  labs(x="Species", y = "Model Predicted *Phragmites* Cover (%)",
+  labs(x="Native Species Identity", y = "Model Predicted <br> Proportional *P.australis* Cover",
        title = "(a)") +
-  geom_text(aes(label = .group,  y = response * 100),
-            nudge_y = 4, size = 3) +
+  geom_text(aes(label = .group,  y = response),
+            nudge_y = .05, size = 3) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
-        axis.title.y = ggtext::element_markdown(size = 9),
+        axis.title.y = ggtext::element_markdown(size = 11),
         plot.title = element_text(size = 9))
 
 d <- ggplot(data = data3, aes(x = reorder(Species, response), y = response)) +
@@ -422,27 +422,28 @@ d <- ggplot(data = data3, aes(x = reorder(Species, response), y = response)) +
   geom_errorbar(aes(ymin = (response - SE),
                     ymax = (response+SE)),
                 width=0, size=0.5) +
-  labs(x="Species", y = "Model Predicted *Phragmites* Biomass (g)",
+  labs(x="Native Species Identity", y = "Model Predicted <br> *P.australis* Biomass (g)",
        title = "(b)") +
   geom_text(aes(label = .group,  y = response),
             nudge_y = 3.5, size = 3) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
-        axis.title.y = ggtext::element_markdown(size = 9),
+        axis.title.y = ggtext::element_markdown(size = 11),
         plot.title = element_text(size = 9))
 
 c / d
 ggsave("phrag_cover_biomass_model_means_species.jpeg")
 
 ##Native cover graphs ####
-e <- ggplot(data = data1, aes(x = Phrag_Presence, y = response * 100,
+e <- ggplot(data = data1, aes(x = Phrag_Presence, y = response,
                               color = Phrag_Presence)) +
   geom_point(size=2) +
-  geom_errorbar(aes(ymin = 100*(response - SE),
-                    ymax = 100*(response+SE)),
+  geom_errorbar(aes(ymin = (response - SE),
+                    ymax = (response+SE)),
                 width=0, size=0.5) +
-  labs(x="Presence of *Phragmites*", y = "Model Predicted Native Cover (%)",
+  labs(x="Presence of *P.australis*", y = "Model Predicted Proportional Native Cover",
        title = "(a)") +
-  geom_text(aes(label = .group,  y = response * 100),
+  ylim(0, 1) +
+  geom_text(aes(label = .group,  y = response),
             nudge_x = 0.1, color = "black") +
   theme(axis.title.x = ggtext::element_markdown(),
         plot.title = element_text(size = 9),
@@ -450,13 +451,14 @@ e <- ggplot(data = data1, aes(x = Phrag_Presence, y = response * 100,
   scale_color_manual(values = color1)
 
 
-f <- ggplot(data = data2, aes(x = reorder(Species,response), y = response * 100, color = Density)) +
+f <- ggplot(data = data2, aes(x = reorder(Species,response), y = response, color = Density)) +
   geom_point(size=2) +
-  geom_errorbar(aes(ymin = 100*(response - SE),
-                    ymax = 100*(response+SE)),
+  geom_errorbar(aes(ymin = (response - SE),
+                    ymax = (response+SE)),
                 width=0, size=0.5) +
-  labs(x="Species", y = "Model Predicted Native Cover (%)",
+  labs(x="Native Species Identity", y = "Model Predicted Proportional Native Cover",
        title = '(b)') +
+  ylim(0, 1) +
   geom_text(aes(label = group_list,
                 vjust = .9, hjust = "left"),
             nudge_x = .15,
@@ -464,7 +466,8 @@ f <- ggplot(data = data2, aes(x = reorder(Species,response), y = response * 100,
             color = "black") +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown(),
-        plot.title = element_text(size = 9)) +
+        plot.title = element_text(size = 9),
+        legend.position = "bottom") +
   scale_color_manual(values = color2)
-e + f
+(e + f) + plot_layout(widths = c(1, 2))
 ggsave("native_cover_model_means_both.jpeg")
