@@ -101,10 +101,10 @@ biomass_native <- biomass %>%
              y = Native.Biomass, color = Density)) +
   #using the means of the blocks
   stat_summary(aes(group = interaction(Species, Density)),
-               fun = mean, geom = "point", size = 2) +
+               fun = mean, geom = "point", size = 2, position = position_jitter(seed=1)) +
   #error bars added
   stat_summary(aes(group = interaction(Species, Density), width = 0),
-               fun.data = mean_se, geom = "errorbar") +
+               fun.data = mean_se, geom = "errorbar", position = position_jitter(seed=1)) +
   labs(x = "Native Species Identity", y = "Native Biomass (g)", color = "Density") +
   facet_wrap(~Phrag_Presence) +
   scale_color_manual(labels = c('High', 'Low'), values = c("red3", "darkblue")) + #change the legend labels

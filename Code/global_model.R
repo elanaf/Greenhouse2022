@@ -452,18 +452,17 @@ e <- ggplot(data = data1, aes(x = Phrag_Presence, y = response,
 
 
 f <- ggplot(data = data2, aes(x = reorder(Species,response), y = response, color = Density)) +
-  geom_point(size=2) +
+  geom_point(size=2, position = position_jitter(seed=1)) +
   geom_errorbar(aes(ymin = (response - SE),
                     ymax = (response+SE)),
-                width=0, size=0.5) +
+                width=0, size=0.5, position = position_jitter(seed=1)) +
   labs(x="Native Species Identity", y = "Model Predicted Proportional Native Cover",
        title = '(b)') +
   ylim(0, 1) +
   geom_text(aes(label = group_list,
                 vjust = .9, hjust = "left"),
-            nudge_x = .15,
             check_overlap = TRUE,
-            color = "black") +
+            color = "black", position = position_jitter(seed=1)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown(),
         plot.title = element_text(size = 9),
