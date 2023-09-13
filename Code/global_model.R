@@ -59,6 +59,8 @@ emmip(mdf.m1, Phrag_Presence~Density|Species, CIs = T)
 emm <- emmeans(mdf.m1, pairwise ~ Phrag_Presence, adjust = "tukey", type = "response")
 data1 <- multcomp::cld(emm$emmeans, alpha = 0.1, Letters = letters)
 data1
+str_1 <- data1$.group
+str_2 <- gsub(" ", "", str_1)
 
 ggplot(data = data1, aes(x = Phrag_Presence, y = response * 100,
                          color = Phrag_Presence)) +
@@ -68,7 +70,7 @@ ggplot(data = data1, aes(x = Phrag_Presence, y = response * 100,
                 width=0, size=0.5) +
   labs(x="Presence of *Phragmites*", y = "Model Predicted Native Cover (%)",
        title = "(a)") +
-  geom_text(aes(label = .group,  y = response * 100),
+  geom_text(aes(label = str_2,  y = response * 100),
             nudge_x = 0.1, color = "black") +
   theme(axis.title.x = ggtext::element_markdown(),
         plot.title = element_text(size = 9),
@@ -81,15 +83,8 @@ ggsave("native_cover_presence_model_means.jpeg")
 emm <- emmeans(mdf.m1, pairwise ~ Species * Density, adjust = "tukey", type = "response")
 data2 <- multcomp::cld(emm$emmeans, alpha = 0.1, Letters = letters)
 data2
-
-data2$.group
-group_list <- c("a", "a", "ab", "ab", 
-                "abc", "abc", "bcd", "cde",
-                "def", "def", "efg", "efg",
-                "fg", "gh", "hi", "hij",
-                "hij", "ij", "ij","ij",
-                "ij","ij","ij","ij","ij",
-                "j")
+str_3 <- data2$.group
+str_4 <- gsub(" ", "", str_3)
 
 ggplot(data = data2, aes(x = reorder(Species,response), y = response * 100, color = Density)) +
   geom_point(size=2) +
@@ -98,7 +93,7 @@ ggplot(data = data2, aes(x = reorder(Species,response), y = response * 100, colo
                 width=0, size=0.5) +
   labs(x="Species", y = "Model Predicted Native Cover (%)",
        title = '(b)') +
-  geom_text(aes(label = group_list,
+  geom_text(aes(label = str_4,
                 vjust = .9, hjust = "left"),
             nudge_x = .15,
             check_overlap = TRUE,
@@ -443,8 +438,8 @@ e <- ggplot(data = data1, aes(x = Phrag_Presence, y = response,
   labs(x="Presence of *P.australis*", y = "Model Predicted Proportional Native Cover",
        title = "(a)") +
   ylim(0, 1) +
-  geom_text(aes(label = .group,  y = response),
-            nudge_x = 0.1, color = "black") +
+  geom_text(aes(label = str_2,  y = response),
+            nudge_x = 0.2, color = "black", size = 3) +
   theme(axis.title.x = ggtext::element_markdown(),
         plot.title = element_text(size = 9),
         legend.position = "none") +
@@ -459,14 +454,17 @@ f <- ggplot(data = data2, aes(x = reorder(Species,response), y = response, color
   labs(x="Native Species Identity", y = "Model Predicted Proportional Native Cover",
        title = '(b)') +
   ylim(0, 1) +
-  geom_text(aes(label = group_list,
-                vjust = .9, hjust = "left"),
+  geom_text(aes(label = str_4,
+                vjust = 1.7, hjust = -.1),
             check_overlap = TRUE,
-            color = "black", position = position_jitter(seed=1)) +
+            color = "black", position = position_jitter(seed=1),
+            size = 3) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown(),
         plot.title = element_text(size = 9),
         legend.position = "bottom") +
   scale_color_manual(values = color2)
-(e + f) + plot_layout(widths = c(1, 2))
+
+
+(e + f) + plot_layout(widths = c(1, 3))
 ggsave("native_cover_model_means_both.jpeg")
