@@ -156,7 +156,8 @@ cover_phrag <- greenhouse %>%
         axis.text.x = element_text(angle = 45, hjust = 0.9)) +
   labs(x = "Date", y = "*P.australis* Proportional Cover", color = "Native Seeding Density") +
   scale_color_manual(labels = c("High", "Low", "Control"), values = c("red3", "darkblue", "gray")) +
-  theme(axis.title.y = ggtext::element_markdown())
+  theme(axis.title.y = ggtext::element_markdown())+
+  coord_cartesian(ylim = c(0, 0.4))
 
 cover_phrag
 
