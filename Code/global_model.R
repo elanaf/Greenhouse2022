@@ -435,12 +435,12 @@ e <- ggplot(data = data1, aes(x = Phrag_Presence, y = response,
   geom_errorbar(aes(ymin = (response - SE),
                     ymax = (response+SE)),
                 width=0, size=0.5) +
-  labs(x="Presence of *P.australis*", y = "Model Predicted Proportional Native Cover",
+  labs(x="Presence of <br> *P.australis*", y = "Model Predicted Proportional Native Cover",
        title = "(a)") +
   ylim(0, 1) +
   geom_text(aes(label = str_2,  y = response),
             nudge_x = 0.2, color = "black", size = 3) +
-  theme(axis.title.x = ggtext::element_markdown(),
+  theme(axis.title.x = ggtext::element_markdown(size = 11),
         plot.title = element_text(size = 9),
         legend.position = "none") +
   scale_color_manual(values = color1)
@@ -461,6 +461,7 @@ f <- ggplot(data = data2, aes(x = reorder(Species,response), y = response, color
             size = 3) +
   theme(axis.text.x = element_text(angle = 45, hjust = 0.9), 
         axis.title.y = ggtext::element_markdown(),
+        axis.title.x = ggtext::element_markdown(size = 11),
         plot.title = element_text(size = 9),
         legend.position = "bottom") +
   scale_color_manual(values = color2)
